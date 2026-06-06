@@ -1,0 +1,9 @@
+{
+  "channel": "dev",
+  "hw": "GEN2",
+  "fw_semver": "2.3.3",
+  "fw_build": "nogit",
+  "sha256": "ec303b73aa93dfff97764d999fa4445b2d0b9ff8f3d3ed7371bbe02506f3fa57",
+  "sig": null,
+  "url": "file:/ballu_gen2-2.3.3+nogit.bin"
+}
