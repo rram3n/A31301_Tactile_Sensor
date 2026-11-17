@@ -1,160 +1,162 @@
-# PlatformIO Ballu Code
+# A31301 Finger Sensor Reader Firmware
 
-- Special thanks to Eric (@EricYufengWu) for migrating from Arduino IDE to PlatformIO
+ESP32-S3 firmware that reads the 16 A31301 Hall-effect sensors on the MERLIN finger sensor board and shows live X, Y, Z field values on the OLED.
 
-For legacy codes, go to release ver. 1.4.0
-## How to flash
-Make sure you have installed:
+## Origin
+
+This firmware is adapted from the BALLU PlatformIO firmware (v2.3.3, Gen2 board). It runs on the same ESP32-S3 Gen2 board and keeps that project's OLED menu system, battery monitoring and soft power switch. Thanks to Eric (EricYufengWu) for the original Arduino IDE to PlatformIO migration.
+
+### What changed from the original
+
+**Removed**
+- Xbox controller over BLE (JoystickBLE, BLEBridge)
+- ESP-NOW hub, pair master and pair slave roles (ESPNowBridge, PM_HubPairing, hub_role build)
+- LoRa link
+- Servo control and RGB LED control
+- PC serial control protocol (PCSerialControl) and the serial sensor stream
+- Bridge and role settings stored in NVS
+- `ballu_gen1` and `hub_role` build environments
+
+**Kept**
+- OLED menu and button handling (OLED_Display, MenuConfig)
+- Battery monitoring through the INA219 (Battery page)
+- Soft power switch and 2 s long-press shutdown
+
+**Added or changed**
+- Support for 16 A31301 sensors at 0x60 to 0x6F (was 9)
+- Main menu lists every sensor directly
+- Live sensor page with sensor cycling and selectable units (raw, mT, Gauss)
+
+## Hardware
+
+| Item | Value |
+|---|---|
+| Host board | BALLU Gen2 (ESP32-S3, `4d_systems_esp32s3_gen4_r8n16`) |
+| I2C | SDA = GPIO 11, SCL = GPIO 10, 400 kHz |
+| Sensors | 16× A31301 on one shared bus with the OLED |
+| Buttons | UP = GPIO 40, DOWN = GPIO 38, ENTER = GPIO 41, BACK = GPIO 39, POWER = GPIO 47 |
+
+Pin definitions are in `include/PinsGen2.h`.
+
+## Build and flash
+
+Requirements:
 - VS Code
-- Platform IO extension
-- Platform IO Core
-- ESP-IDF
+- PlatformIO extension and PlatformIO Core
 
-### Build
-1. Make sure the environment you use is correct (Default to env:4d_systems_esp32s3_gen4_r8n16)
-2. click build (check mark in the picture below)
-3. If everything compiles, all the dependencies are installed correctly. 
-4. Connect the BALLU board while pressing the reset button
-5. Click upload (right arrow in the picture below)
-![img.png](pio_program.png)
+Steps:
+1. Open the `firmware/` folder in VS Code.
+2. Check the environment is `env:ballu_gen2` (the default).
+3. Click Build (check mark).
+4. Connect the board over USB-C while holding the reset button.
+5. Click Upload (right arrow).
 
+![PlatformIO toolbar](pio_program.png)
 
-### if you get an error connecting, try one of the following
-1. check if the ballu board screen is off. If not replug while pressing reset.
-2. set the serial port manually (default: auto)
-3. Make sure the type-c cable supports data transfer (not charging cable)
-4. If you still have issues uploading, create a GitHub issue
+Command line equivalents:
 
+```
+pio run -e ballu_gen2
+pio run -e ballu_gen2 -t upload
+pio device monitor -b 115200
+```
 
-## Upload without build
-`pio run -t nobuild -t upload` in the terminal (Click PlatformIO: Open New Terminal)
+Upload without rebuilding:
 
+```
+pio run -t nobuild -t upload
+```
 
+### If upload fails
+1. Unplug, then replug while holding reset. The screen should stay off.
+2. Set the serial port manually instead of auto.
+3. Use a USB-C cable that supports data, not a charge-only cable.
 
-#### Quick Links
-- Main usage and connection guides: see repository root README.
-- Debugging tips: see root README → Debugging Guide.
+## Usage
 
-#### After Flashing: First Steps
-- Pair Xbox controller: Joystick → Connect
-- Try BLE bridge: Bridge → BLE Slave (on remote) and Bridge → BLE Master (on controller)
-- Try ESP-NOW: Bridge → ESP-NOW Slave (Pair) on remote; Bridge → ESP-NOW Master on controller; select ballu_…
-- Save the pair and later use Bridge → ESP-NOW for quick connect
+The main menu shows:
 
-#### Serial Streaming Test
-- On device: Sensor → Stream: ALL -> Serial
-- On PC: open a serial terminal at 115200 or use PC-Controller/receive_a31301_stream.py
+```
+S0: 0x60
+S1: 0x61
+...
+S15: 0x6F
+Battery %
+Shutdown
+```
 
+- Select a sensor with ENTER to open its live page.
+- On the live page, push the joystick down for the next sensor and up for the previous one (wraps 0 to 15).
+- Press BACK to return to the main menu.
+- Hold the center button for 2 s to power off.
 
----
+## What the firmware reads
 
-## Code Structure Overview (Ballu_PIO)
-This section orients firmware contributors to the organization and responsibilities of the firmware code. It focuses on the ESP32-S3 build (Arduino framework) used by Ballu Gen1/Gen2 boards.
+For the selected sensor, every refresh (default 100 ms, about 10 Hz) the firmware:
 
-### 1) PlatformIO environments (platformio.ini)
-- default_envs = ballu_gen2
-  - BOARD_GEN_2, NimBLE enabled, zh_network, extra INA219 dependency.
-- env:ballu_gen1
-  - BOARD_GEN_1, NimBLE enabled.
-- env:hub_role
-  - ROLE_HUB defined, isolates only the hub role entry (see src/hub_role_main.cpp), serial monitor at 115200. Uses build_src_filter to only compile hub_role_main.cpp (which includes espnow_hub.cpp).
+1. Checks the sensor answers at its I2C address (shown as Connected or Disconnected).
+2. Reads the X, Y and Z magnetic field channels.
 
-Typical commands from Ballu_PIO:
-- pio run -e ballu_gen2
-- pio run -e ballu_gen2 -t upload
-- pio device monitor -b 115200
-- To build only hub role: pio run -e hub_role
+| Channel | Registers (MSB, LSB) |
+|---|---|
+| X | 0x1E, 0x1F |
+| Y | 0x20, 0x21 |
+| Z | 0x22, 0x23 |
 
-### 2) Entry points and roles
-- src/main.cpp (default, non-hub build)
-  - Full interactive firmware with OLED UI, BLE, ESP-NOW, LoRa, Servos, RGB, Battery background.
-  - Schedules InitTask for heavy inits (sensors, RGB, servos, BLE, LoRa, settings) and keeps UI responsive.
-  - loop() orchestrates:
-    - PCSerialControl::poll() → handles ASCII control/status from PC-Controller (HUB_START/STOP/STATUS etc.).
-    - OLED menu handling and state display.
-    - Reads joystick snapshot (JoystickBLE) once and fans out to ServoController and RGBController.
-    - LoRa processing.
-    - If BridgeSettings.role == Hub → forward joystick to pair masters (ESP-NOW).
-    - If BridgeSettings.role == PairMaster → originate joystick to slave when Hub is idle; injects brief synthetic color button pulses for RGB keepalive.
-- src/hub_role_main.cpp (env:hub_role)
-  - Minimal entry that includes espnow_hub.cpp to build a clean Hub-only image without the UI and other subsystems. Useful for bench testing PC-Controller ↔ Hub flows.
+Each channel is a 15-bit two's complement value. The firmware sign-extends bit 14 into bit 15, so each reading is a signed 16-bit integer from -16384 to +16383.
 
-### 3) Subsystems (headers in include/, implementations in src/)
-- Bridges and control paths
-  - ESPNowBridge.{h,cpp}
-    - Manages ESP-NOW roles: Hub, PairMaster, PairSlave; pairing beacons; sending joystick commands (hubSendToPairs, pairMasterSendToSlave), and last-hub timing logic.
-  - BLEBridge.{h,cpp} + JoystickBLE.{h,cpp}
-    - BLE transport for Xbox controller; JoystickBLE exposes joyVal[] and a TaskJoystickBLE RTOS task. BLEBridge handles connection setup depending on role.
-  - PCSerialControl.{h,cpp}
-    - ASCII command/response interface over USB CDC. Exposes HUB_START/HUB_STOP/HUB_STATUS, LIST_MAP/IDX/MAP prints, and diagnostics used by the Flask backend.
-  - lora.{h,cpp}
-    - LoRa auxiliary link (optional), integrated in loop() for byte processing and role reporting.
-- UI and configuration
-  - OLED_Display.{h,cpp}
-    - OLED drawing, menu navigation, button handling.
-  - MenuConfig.{h,cpp}
-    - Menu tree and callbacks; calls into bridges (BLE/ESP-NOW/LoRa) and settings.
-  - BridgeSettings.{h,cpp}
-    - Persistent (NVS) settings: current role, paired MACs, hasMaster/Slave, left/right PM flags. BridgeSettingsStore::{begin,load,save}.
-  - PM_HubPairing.{h,cpp}
-    - Pairing helpers for Hub/PairMaster/PairSlave modes.
-- Actuators and feedback
-  - RGBController.{h,cpp}
-    - LED color logic driven by joystick and modes; has currentColor for diagnostics; optional debug with throttling.
-  - ServoController.{h,cpp}
-    - Servo setup and handleServos() using joystick snapshot; stores calibration in NVS.
-- Power and battery
-  - SoftPowerSwitch.{h,cpp}
-    - Power button and red LED handling, power gate control, debounced long-press task.
-  - BatteryBackground.{h,cpp}, BatteryConfig.{h,cpp}, BatteryFactory.{h,cpp}, BatterySensor.{h,cpp}, INA219SoCSensor.cpp, AnalogVoltageSensor.cpp
-    - Battery monitoring stack; background task periodically samples current/voltage, estimates SoC, raises alerts; configured via BatteryConfig/Factory.
-  - PowerSettings.{h,cpp}
-    - Load/save battery and power-related settings (NVS) used by the background monitor.
-- Sensors
-  - A31301.{h,cpp}
-    - Hall-effect sensor array (9 devices on I2C). SensorDisplay.{h,cpp} renders sensor pages to OLED; Utilities.{h,cpp} includes small helpers.
+### Display format
 
-### 4) Control and data flow (high-level)
-- Xbox controller → JoystickBLE::joyVal[] (asynchronous task on core 0)
-- main loop → snapshot joyVal into a local array to avoid tearing, then:
-  - ServoController.handleServos() → updates servos
-  - RGBController.handleRGB() → updates LEDs
-  - If role == Hub and ESPNowBridge active → build JoystickCmd and hubSendToPairs()
-  - If role == PairMaster and no recent Hub joystick seen → pairMasterSendToSlave() at ~20 Hz (with keepalive every ~1.5 s)
-- PC-Controller (Flask) over USB CDC:
-  - PCSerialControl::poll() handles commands and prints. Ensure firmware emits READY, IDX:, MAP:, and HUB_STATUS/STAT lines as used by backend parsers.
+```
+S5 @0x65
+Connected
+X: 1234
+Y: -56
+Z: 7890
+```
 
-### 5) Logging and PC-Controller contracts
-- READY, IDX:, MAP: lines are consumed by PC-Controller to detect readiness and build idx→mac map.
-- HUB_STATUS/HUB_STATS commands should print single-line summaries parsable on the server; avoid excessive flooding.
-- When adding new diagnostics, prefer concise key=value tokens (e.g., NODE: idx=7 batt=78 rssi=-62) — these are parsed by the backend.
+- Line 1: sensor index (S0 to S15) and its I2C address
+- Line 2: whether the sensor responded
+- Lines 3 to 5: X, Y, Z in the selected unit
 
-### 6) Extending safely (firmware)
-- Timing and tasks
-  - Keep UI responsive: heavy inits go into InitTask. Use xTaskCreatePinnedToCore with reasonable stack sizes.
-  - Avoid blocking in loop(); prefer short, periodic work with millis() scheduling.
-- Joystick mapping
-  - Maintain the int16 [-32768..32767] mapping for lx/ly/rx/ry and 0..255 for triggers to match PC-Controller expectations.
-- ASCII protocol stability
-  - Do not remove READY / LIST_MAP / IDX/MAP prints; BalluController.wait_for_idx_map() relies on them.
-  - If changing field names, update PC-Controller parsers accordingly.
-- Persistence
-  - Use BridgeSettingsStore and ServoController::initNVS for NVS read/write. Avoid frequent writes in tight loops.
-- Battery safety
-  - Respect BatteryBackground thresholds; surface alerts on OLED and, where applicable, via PC-Serial logs.
+### Units
 
-### 7) Quick file map (selected)
-- Roles/entry: src/main.cpp, src/hub_role_main.cpp, src/espnow_hub.cpp, src/espnow_node.cpp
-- Bridges: include/ESPNowBridge.h, src/ESPNowBridge.cpp; include/BLEBridge.h, src/BLEBridge.cpp; include/PCSerialControl.h, src/PCSerialControl.cpp; include/lora.h, src/lora.cpp
-- UI: include/OLED_Display.h, src/OLED_Display.cpp; include/MenuConfig.h, src/MenuConfig.cpp
-- Actuators: include/RGBController.h, src/RGBController.cpp; include/ServoController.h, src/ServoController.cpp
-- Power/Battery: include/SoftPowerSwitch.h, src/SoftPowerSwitch.cpp; include/Battery*.h, src/Battery*.cpp; src/INA219SoCSensor.cpp, src/AnalogVoltageSensor.cpp
-- Sensors: include/A31301.h, src/A31301.cpp; src/SensorDisplay.cpp
-- Utilities/Globals: include/Globals.h, include/Utilities.h, src/Utilities.cpp, include/PinsGen*.h, include/Version.h
+| Setting | Output | Conversion |
+|---|---|---|
+| `SensorUnits::RAW` (default) | Raw counts | none |
+| `SensorUnits::MILLITESLA` | mT, 3 decimals | counts / 81.967 |
+| `SensorUnits::GAUSS` | G, 3 decimals | counts / 81.967 × 10 |
 
-### 8) Common gotchas
-- BLE + ESP-NOW coexistence: do not free BT memory; keep NimBLE config flags (see platformio.ini). Use 400 kHz I2C for OLED/sensors.
-- Hub vs full build: use env:hub_role to produce a slim Hub image for PC-Controller testing; it compiles espnow_hub.cpp via hub_role_main.cpp only.
-- Serial prints rate: verbose logs can overwhelm USB; throttle or guard with VERBOSE flags in your code.
+81.967 counts/mT (about 8.2 counts/G) matches the ±2000 G (-20) variant, where full scale (16384 counts) is about 200 mT.
 
-If you add new modules, mirror the style: declare public API in include/, implement in src/, and keep prints compatible with the PC-Controller’s parsers.
+Units, conversion factor and refresh period are set in `src/main.cpp`:
+
+```cpp
+SensorUnits gSensorUnits = SensorUnits::RAW;
+float       gCountsPerMilliTesla = 81.967213f;  // counts per mT
+uint32_t    gSensorPagePeriodMs = 100;          // ~10 Hz OLED page
+```
+
+### Mapping sensor index to board position
+
+Sensor `Sn` has address `0x60 + n`, which is chip `U(n+1)` at board position `[n/4 x n%4]`. For example, S6 = 0x66 = U7 = [1x2]. See the address table in the root README.
+
+## Limitations
+
+- Readings are shown on the OLED only. Serial prints a startup message at 115200 baud and nothing else.
+- One sensor is displayed at a time.
+- X, Y and Z are read in separate I2C transactions, so the three channels are not sampled at exactly the same instant.
+- No zero-offset calibration. Values include the magnet's resting field and any board offset.
+
+## File map
+
+| File | Purpose |
+|---|---|
+| `src/main.cpp` | Setup, sensor array definition, display settings |
+| `include/A31301.h`, `src/A31301.cpp` | A31301 I2C driver |
+| `src/SensorDisplay.cpp` | Live sensor page and battery page |
+| `src/MenuConfig.cpp` | Main menu layout |
+| `src/OLED_Display.cpp` | OLED drawing and menu navigation |
+| `src/Battery*.cpp`, `src/INA219SoCSensor.cpp` | Battery monitoring |
+| `src/SoftPowerSwitch.cpp`, `src/Utilities.cpp` | Power switch and long-press shutdown |
+| `include/PinsGen2.h` | Board pin definitions |
