@@ -1,0 +1,179 @@
+*************************************************************
+FileName = MERLIN_Finger_pcb_4x4.GBR
+AutoAperture = True
+*************************************************************
+Generating : L2 (GND)
+      File : MERLIN_Finger_pcb_4x4.GP1
+
+    Adding Layer      : L2 (GND)
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D23
+    D24
+    D25
+    D26
+*************************************************************
+
+*************************************************************
+Generating : Top Paste
+      File : MERLIN_Finger_pcb_4x4.GTP
+
+    Adding Layer      : Top Paste
+
+    Adding Layer      : L1 (SIG + PWR)
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D15
+    D16
+    D17
+    D18
+    D19
+    D20
+    D21
+*************************************************************
+
+*************************************************************
+Generating : L3 (PWR)
+      File : MERLIN_Finger_pcb_4x4.GP2
+
+    Adding Layer      : L3 (PWR)
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D23
+    D24
+    D25
+    D26
+*************************************************************
+
+*************************************************************
+Generating : Bottom Solder
+      File : MERLIN_Finger_pcb_4x4.GBS
+
+    Adding Layer      : Bottom Solder
+
+    Adding Layer      : L4 (SIG + PWR)
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D20
+*************************************************************
+
+*************************************************************
+Generating : L1 (SIG + PWR)
+      File : MERLIN_Finger_pcb_4x4.GTL
+
+    Adding Layer      : L1 (SIG + PWR)
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D12
+    D15
+    D16
+    D17
+    D18
+    D19
+    D20
+    D21
+    D22
+*************************************************************
+
+*************************************************************
+Generating : Bottom Paste
+      File : MERLIN_Finger_pcb_4x4.GBP
+
+    Adding Layer      : Bottom Paste
+
+    Adding Layer      : L4 (SIG + PWR)
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D20
+*************************************************************
+
+*************************************************************
+Generating : L4 (SIG + PWR)
+      File : MERLIN_Finger_pcb_4x4.GBL
+
+    Adding Layer      : L4 (SIG + PWR)
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D12
+    D20
+    D22
+*************************************************************
+
+*************************************************************
+Generating : Top Overlay
+      File : MERLIN_Finger_pcb_4x4.GTO
+
+    Adding Layer      : Top Overlay
+
+
+Used DCodes :
+    D10
+    D11
+    D12
+    D13
+    D14
+*************************************************************
+
+*************************************************************
+Generating : Bottom Overlay
+      File : MERLIN_Finger_pcb_4x4.GBO
+
+    Adding Layer      : Bottom Overlay
+
+
+Used DCodes :
+    D13
+    D14
+*************************************************************
+
+*************************************************************
+Generating : Top Solder
+      File : MERLIN_Finger_pcb_4x4.GTS
+
+    Adding Layer      : Top Solder
+
+    Adding Layer      : L1 (SIG + PWR)
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D15
+    D16
+    D17
+    D18
+    D19
+    D20
+    D21
+*************************************************************
+
+*************************************************************
+Generating : Profile
+      File : MERLIN_Finger_pcb_4x4.GM
+
+
+Used DCodes :
+    D27
+*************************************************************
+

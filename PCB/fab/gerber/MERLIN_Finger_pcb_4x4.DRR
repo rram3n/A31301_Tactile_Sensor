@@ -1,0 +1,16 @@
+----------------------------------------------------------------------------------------------------------------------------------
+NCDrill File Report For: MERLIN_Finger_pcb_4x4.PcbDoc   11/17/2026  5:09:23 PM
+----------------------------------------------------------------------------------------------------------------------------------
+
+Layer Pair : L1 (SIG + PWR) to L4 (SIG + PWR)
+ASCII Plated RoundHoles File : MERLIN_Finger_pcb_4x4-Plated.TXT
+ASCII Non-Plated RoundHoles File : MERLIN_Finger_pcb_4x4-NonPlated.TXT
+
+Tool       Hole Size               Hole Tolerance               Hole Type       Hole Count   Plated         Tool Travel
+----------------------------------------------------------------------------------------------------------------------------------
+T1      12mil (0.3mm)                                             Round             70        PTH        7.31inch (185.63mm)
+T2      43mil (1.1mm)                                             Round             4         NPTH       2.56inch (65.00mm)
+----------------------------------------------------------------------------------------------------------------------------------
+Totals                                                                              74
+
+Total Processing Time (hh:mm:ss) : 00:00:00
