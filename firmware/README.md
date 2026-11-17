@@ -4,7 +4,7 @@ ESP32-S3 firmware that reads the 16 A31301 Hall-effect sensors on the MERLIN fin
 
 ## Origin
 
-This firmware is adapted from the BALLU PlatformIO firmware (v2.3.3, Gen2 board). It runs on the same ESP32-S3 Gen2 board and keeps that project's OLED menu system, battery monitoring and soft power switch. Thanks to Eric (EricYufengWu) for the original Arduino IDE to PlatformIO migration.
+This firmware is adapted from the BALLU PlatformIO firmware (v2.3.3, Gen2 board). It runs on the same ESP32-S3 Gen2 board and keeps that project's OLED menu system, battery monitoring and soft power switch.
 
 ### What changed from the original
 
